@@ -1,0 +1,74 @@
+body {
+  /*background: url("http://cdn.wonderfulengineering.com/wp-content/uploads/2014/06/galaxy-wallpapers-9.jpg") center center no-repeat;
+  background-size: cover;
+  background-attachment: fixed;*/
+  /*color: #fff;*/
+}
+
+.container{
+  margin-top: 100px
+}
+#instructions{
+    font-size: 1.2em;
+}
+.navbar{
+  position: fixed;
+  width: 100%;
+  background: black;
+  top: 0;
+  left: 0;
+}
+.container{
+  width: 100%;
+  /*background: yellow;*/
+}
+.resultImage{
+  width: 100px;
+  height: 100px;
+  overflow: hidden;
+}
+.clicked{
+  border-style: inset;
+  border: 6px solid red;
+}
+.resultImages{
+  height: 500px;
+  overflow: scroll;
+  overflow-x: hidden;
+  overflow-y: hidden;
+}
+
+.pathBox img{
+  width: 100px;
+  height: 100px;
+  overflow: hidden;
+}
+.winBox, .imgBox{
+  padding-top: 60px;
+  padding-bottom: 60px;
+  background-size: cover;
+  background-repeat: no-repeat;
+}
+
+.title{
+  text-align: center;
+  font-size: 40px;
+  margin-top: 70px;
+  font-family: 'Bungee Inline', cursive;
+}
+.sectionHead{
+  text-decoration: underline;
+  font-family: 'Bungee Inline', cursive;
+}
+.startTag, .endTag{
+  margin: auto 0;
+  font-size: 3em;
+  font-family: 'Bungee Inline', cursive;
+}
+.top img{
+  height: 100px;
+}
+.top{
+  border-top: 1px solid white;
+  border-bottom: 1px solid white;
+}

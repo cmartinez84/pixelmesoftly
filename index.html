@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <head>
+      <link rel="stylesheet" href="build/css/vendor.css">
+      <link rel="stylesheet" href="css/mystyles.css">
+      <link href="https://fonts.googleapis.com/css?family=Bungee+Inline" rel="stylesheet">
+      <script src="build/js/vendor.min.js"></script>
+      <script type="text/javascript" src="build/js/app.js"></script>
+  </head>
+  <title>Telephoto</title>
+  </head>
+  <body>
+    <div class="container">
+      <h1 class="title">Telephoto Game</h1>
+      <div class="row top">
+        <div class="col-sm-2 imgBox">
+          <span class="startTag">Start</span>
+        </div>
+        <div class="col-sm-8 pathBox">
+
+        </div>
+        <div class="col-sm-2 winBox">
+          <span class='endTag'></span>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-sm-offset-5 col-sm-6">
+          <div class="row">
+            <span id="tag1"></span>
+            <span id="tag2"></span>
+            <span id="tag3"></span>
+            <span id="tag4"></span>
+            <span id="tag5"></span>
+          </div>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-sm-2">
+            <h1 class="sectionHead">Stats</h1>
+          <div class="timerBox">
+            <h3 class="sectionHead"> Timer</h3><h5><span id="timer"></span></h5>
+          </div>
+          <div class="clickBox">
+            <h3 class="sectionHead">Clicks</h3><h5><span id="clicks"></span> </h5>
+          </div>
+          <div class="startButton">
+            <button type="button" class="btn btn-lg btn-success"name="button">Start A Game</button>
+          </div>
+        </div>
+        <div class="col-sm-8">
+            <div id="instructions">
+                  <p>Hello! Welcome to Tele-photo, a game of image association based on image tagging technology. The goal of the game is to find and click on an image with a tag matching the destination on the upper right.
+                    <p>1. Click "Start a Game"</p>
+                    <p>2. A beginning image wil appear in the upper left, as well as a series of images found on <a href="http://www.pixabay.com">Pixabay</a> matching a randomly generated starting tag.</p>
+                    <p>3. Click on a square image to genereate more tags, and in turn generate more images in this field based on its tags.</p>
+                    <p>4. By using association, your goal is to work towards finding and clicking on an image that matches the destination tag to the upper left.</p>
+                    <p>5. Due to the unique nature of ever pictures tags, some pictures will generate next to no images. (We are actively eliminating tags that do not produce any images).</p>
+                    <p>6. That said, some images will generate more tags than others.</p>
+                    <p>7. You have 120 seconds and 15 clicks. Your score is based on how few clicks and how much time it takes to win.</p>
+                    <p>8. There is an inherent and inextricable element of luck in this game, and though some images may appear to show a similar image, the destination tag, you may still have to find an image that more clearly represents the tag shown.</p>
+                    <p>9. Luck aside, skill is imperative, all destination tags come directly from the technology that produces the images in this app.</p>
+                    <p>10. If you enjoy, feel free to share, but please do not distribute publicly without first contacting me, as there are limits on my API!</p>
+                    <p>This app has not yet been scaled for the average browser size of 1024×768, but neatly formats upon zooming out to workable a size, anywhere from 50-75%, <⌘ shift +> Enjoy!</p>
+            </div>
+          <div class="row resultImages"></div>
+        </div>
+        <div class="col-sm-2">
+          <h3 class="sectionHead">Scores</h3>
+          <ol class="scoresList"></ol>
+        </div>
+      </div>
+    </div>
+    </div>
+    <!-- <div class="navbar">
+      <form id="submitUrl">
+        <label for="url">Enter a Url of an Image:</label>
+        <input type ="text" id="url">
+        <button class="btn btn-success" type="button" name="button" id="submitButton">Submit Url</button>
+      </form>
+    </div> -->
+  </body>
+</html>
