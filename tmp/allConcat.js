@@ -44,6 +44,9 @@ $(function(){
     reader.onload = function(e){
       console.log(e);
       $("#blah").attr('src', e.target.result);
+      var img = new Image();
+      img.src = e.target.result;
+      ctx.drawImage(img, 0, 0);
     };
     reader.readAsDataURL(file);
 
