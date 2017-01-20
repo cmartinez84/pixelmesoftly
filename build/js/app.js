@@ -166,7 +166,7 @@ module.exports = function xhrAdapter(resolve, reject, config) {
 };
 
 }).call(this,require('_process'))
-},{"../helpers/settle":15,"./../helpers/btoa":8,"./../helpers/buildURL":9,"./../helpers/cookies":11,"./../helpers/isURLSameOrigin":13,"./../helpers/parseHeaders":14,"./../helpers/transformData":17,"./../utils":18,"_process":31}],3:[function(require,module,exports){
+},{"../helpers/settle":15,"./../helpers/btoa":8,"./../helpers/buildURL":9,"./../helpers/cookies":11,"./../helpers/isURLSameOrigin":13,"./../helpers/parseHeaders":14,"./../helpers/transformData":17,"./../utils":18,"_process":32}],3:[function(require,module,exports){
 'use strict';
 
 var defaults = require('./defaults');
@@ -380,7 +380,7 @@ module.exports = function dispatchRequest(config) {
 
 
 }).call(this,require('_process'))
-},{"../adapters/http":2,"../adapters/xhr":2,"_process":31}],6:[function(require,module,exports){
+},{"../adapters/http":2,"../adapters/xhr":2,"_process":32}],6:[function(require,module,exports){
 'use strict';
 
 var utils = require('./utils');
@@ -1240,7 +1240,7 @@ var App = function () {
 
 module.exports = App;
 }).call(this,require('_process'))
-},{"./Concepts":21,"./Inputs":23,"./Models":25,"./constants":26,"_process":31,"axios":1,"es6-promise":30}],20:[function(require,module,exports){
+},{"./Concepts":21,"./Inputs":23,"./Models":25,"./constants":26,"_process":32,"axios":1,"es6-promise":31}],20:[function(require,module,exports){
 "use strict";
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
@@ -1258,9 +1258,8 @@ var Concept = function () {
     this.id = data.id;
     this.name = data.name;
     this.createdAt = data.created_at || data.createdAt;
-    this.updatedAt = data.updated_at || data.updatedAt;
     this.appId = data.app_id || data.appId;
-    this.value = null;
+    this.value = data.value || null;
     this._config = _config;
     this._rawData = data;
   }
@@ -1393,8 +1392,8 @@ var Concepts = function () {
     /**
     * Add a list of concepts given an id and name
     * @param {object|object[]}   concepts       Can be a single media object or an array of media objects
-    *   @param  {object}           concepts[].concept
-    *     @param  {object}           concepts[].concept.id      The new concept's id
+    *   @param  {object|string}    concepts[].concept         If string, this is assumed to be the concept id. Otherwise, an object with the following attributes
+    *     @param  {object}           concepts[].concept.id      The new concept's id (Required)
     *     @param  {object}           concepts[].concept.name    The new concept's name
     * @return {Promise(Concept, error)}             A Promise that is fulfilled with a Concept instance or rejected with an error
     */
@@ -1490,12 +1489,12 @@ var _createClass = function () { function defineProperties(target, props) { for 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
 var axios = require('axios');
+var Concepts = require('./Concepts');
 
 var _require = require('./constants');
 
 var API = _require.API;
-var replaceVars = _require.replaceVars;
-var INPUT_PATCH_PATH = API.INPUT_PATCH_PATH;
+var INPUTS_PATH = API.INPUTS_PATH;
 
 /**
 * class representing an input
@@ -1509,6 +1508,7 @@ var Input = function () {
     this.id = data.id;
     this.createdAt = data.created_at || data.createdAt;
     this.imageUrl = data.data.image.url;
+    this.concepts = new Concepts(_config, data.data.concepts);
     this.score = data.score;
     this._config = _config;
     this._rawData = data;
@@ -1530,35 +1530,65 @@ var Input = function () {
     *   @param {object}           concepts[].concept
     *     @param {string}           concepts[].concept.id        The concept id (required)
     *     @param {boolean}          concepts[].concept.value     Whether or not the input is a positive (true) or negative (false) example of the concept (default: true)
+    * @param {object}           metadata                      Object with key values to attach to the input (optional)
     * @return {Promise(input, error)} A Promise that is fulfilled with an instance of Input or rejected with an error
     */
 
   }, {
     key: 'mergeConcepts',
-    value: function mergeConcepts(concepts) {
-      return this._update('merge_concepts', concepts);
+    value: function mergeConcepts(concepts, metadata) {
+      return this._update('merge', concepts, metadata);
     }
     /**
-    * Delete concept to an input
+    * Delete concept from an input
     * @param {object[]}         concepts    Object with keys explained below:
     *   @param {object}           concepts[].concept
     *     @param {string}           concepts[].concept.id        The concept id (required)
     *     @param {boolean}          concepts[].concept.value     Whether or not the input is a positive (true) or negative (false) example of the concept (default: true)
+    * @param {object}           metadata                      Object with key values to attach to the input (optional)
     * @return {Promise(input, error)} A Promise that is fulfilled with an instance of Input or rejected with an error
     */
 
   }, {
     key: 'deleteConcepts',
-    value: function deleteConcepts(concepts) {
-      return this._update('delete_concepts', concepts);
+    value: function deleteConcepts(concepts, metadata) {
+      return this._update('remove', concepts, metadata);
+    }
+    /**
+    * Overwrite inputs
+    * @param {object[]}         concepts                      Array of object with keys explained below:
+    *   @param {object}           concepts[].concept
+    *     @param {string}           concepts[].concept.id         The concept id (required)
+    *     @param {boolean}          concepts[].concept.value      Whether or not the input is a positive (true) or negative (false) example of the concept (default: true)
+    * @param {object}           metadata                      Object with key values to attach to the input (optional)
+    * @return {Promise(input, error)}                         A Promise that is fulfilled with an instance of Input or rejected with an error
+    */
+
+  }, {
+    key: 'overwriteConcepts',
+    value: function overwriteConcepts(concepts, metadata) {
+      return this._update('overwrite', concepts, metadata);
     }
   }, {
     key: '_update',
-    value: function _update(concepts) {
-      var url = '' + this._config.apiEndpoint + replaceVars(INPUT_PATCH_PATH, [this.id]);
+    value: function _update(action) {
+      var concepts = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : [];
+      var metadata = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : null;
+
+      var url = '' + this._config.apiEndpoint + INPUTS_PATH;
+      var inputData = {};
+      if (concepts.length) {
+        inputData.concepts = concepts;
+      }
+      if (metadata !== null) {
+        inputData.metadata = metadata;
+      }
       var data = {
         action: action,
-        concepts: concepts
+        inputs: [{
+          id: this.id,
+          data: inputData
+        }]
       };
       return wrapToken(this._config, function (headers) {
         return new Promise(function (resolve, reject) {
@@ -1580,7 +1610,7 @@ var Input = function () {
 ;
 
 module.exports = Input;
-},{"./constants":26,"axios":1}],23:[function(require,module,exports){
+},{"./Concepts":21,"./constants":26,"axios":1}],23:[function(require,module,exports){
 'use strict';
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
@@ -1677,12 +1707,14 @@ var Inputs = function () {
     * @param {object|object[]}        inputs                                Can be a single media object or an array of media objects (max of 128 inputs/call; passing > 128 will throw an exception)
     *   @param {object|string}          inputs[].input                        If string, is given, this is assumed to be an image url
     *     @param {string}                 inputs[].input.(url|base64)           Can be a publicly accessibly url or base64 string representing image bytes (required)
-    *     @param {string}                 inputs[].input.inputId                ID of input (optional)
+    *     @param {string}                 inputs[].input.id                     ID of input (optional)
     *     @param {number[]}               inputs[].input.crop                   An array containing the percent to be cropped from top, left, bottom and right (optional)
+    *     @param {object[]}               inputs[].input.metadata               Object with key values to attach to the input (optional)
     *     @param {object[]}               inputs[].input.concepts               An array of concepts to attach to media object (optional)
     *       @param {object|string}          inputs[].input.concepts[].concept     If string, is given, this is assumed to be concept id with value equals true
     *         @param {string}                 inputs[].input.concepts[].concept.id          The concept id (required)
     *         @param {boolean}                inputs[].input.concepts[].concept.value       Whether or not the input is a positive (true) or negative (false) example of the concept (default: true)
+    *       @param {string}                 inputs[].input.concepts[].<key>       <key> can be any string with any <value>
     * @return {Promise(inputs, error)} A Promise that is fulfilled with an instance of Inputs or rejected with an error
     */
 
@@ -1739,7 +1771,7 @@ var Inputs = function () {
     }
     /**
     * Delete an input or a list of inputs by id or all inputs if no id is passed
-    * @param {String}    id           The id of input to delete (optional)
+    * @param {string|string[]}    id           The id of input to delete (optional)
     * @return {Promise(response, error)} A Promise that is fulfilled with the API response or rejected with an error
     */
 
@@ -1751,30 +1783,41 @@ var Inputs = function () {
       var id = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : null;
 
       var val = void 0;
-      if (id === null) {
+      // delete an input
+      if (checkType(/String/, id)) {
         (function () {
           var url = '' + _this5._config.apiEndpoint + replaceVars(INPUT_PATH, [id]);
           val = wrapToken(_this5._config, function (headers) {
             return axios.delete(url, { headers: headers });
           });
         })();
-      } else if (Array.isArray(id)) {
-        val = this._update('delete_inputs', id);
       } else {
-        (function () {
-          var url = '' + _this5._config.apiEndpoint + INPUTS_PATH;
-          val = wrapToken(_this5._config, function (headers) {
-            return axios.delete(url, { headers: headers });
-          });
-        })();
+        val = this._deleteInputs(id);
       }
       return val;
+    }
+  }, {
+    key: '_deleteInputs',
+    value: function _deleteInputs() {
+      var id = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : null;
+
+      var url = '' + this._config.apiEndpoint + INPUTS_PATH;
+      return wrapToken(this._config, function (headers) {
+        var data = id === null ? { 'delete_all': true } : { 'ids': id };
+        return axios({
+          url: url,
+          method: 'delete',
+          headers: headers,
+          data: data
+        });
+      });
     }
     /**
     * Merge concepts to inputs in bulk
     * @param {object[]}         inputs    List of concepts to update (max of 128 inputs/call; passing > 128 will throw an exception)
     *   @param {object}           inputs[].input
     *     @param {string}           inputs[].input.id        The id of the input to update
+    *     @param {object}           inputs[].input.metadata                     Object with key values to attach to the input (optional)
     *     @param {string}           inputs[].input.concepts  Object with keys explained below:
     *       @param {object}           inputs[].input.concepts[].concept
     *         @param {string}           inputs[].input.concepts[].concept.id        The concept id (required)
@@ -1785,14 +1828,15 @@ var Inputs = function () {
   }, {
     key: 'mergeConcepts',
     value: function mergeConcepts(inputs) {
-      return this._update('merge_concepts', inputs);
+      return this._update('merge', inputs);
     }
     /**
     * Delete concepts to inputs in bulk
     * @param {object[]}         inputs    List of concepts to update (max of 128 inputs/call; passing > 128 will throw an exception)
     *   @param {object}           inputs[].input
-    *     @param {string}           inputs[].input.id        The id of the input to update
-    *     @param {string}           inputs[].input.concepts  Object with keys explained below:
+    *     @param {string}           inputs[].input.id                           The id of the input to update
+    *     @param {object}           inputs[].input.metadata                     Object with key values to attach to the input (optional)
+    *     @param {string}           inputs[].input.concepts                     Object with keys explained below:
     *       @param {object}           inputs[].input.concepts[].concept
     *         @param {string}           inputs[].input.concepts[].concept.id        The concept id (required)
     *         @param {boolean}          inputs[].input.concepts[].concept.value     Whether or not the input is a positive (true) or negative (false) example of the concept (default: true)
@@ -1802,7 +1846,25 @@ var Inputs = function () {
   }, {
     key: 'deleteConcepts',
     value: function deleteConcepts(inputs) {
-      return this._update('delete_concepts', inputs);
+      return this._update('remove', inputs);
+    }
+    /**
+    * Overwrite inputs in bulk
+    * @param {object[]}         inputs    List of concepts to update (max of 128 inputs/call; passing > 128 will throw an exception)
+    *   @param {object}           inputs[].input
+    *     @param {string}           inputs[].input.id                           The id of the input to update
+    *     @param {object}           inputs[].input.metadata                     Object with key values to attach to the input (optional)
+    *     @param {string}           inputs[].input.concepts                     Object with keys explained below:
+    *       @param {object}           inputs[].input.concepts[].concept
+    *         @param {string}           inputs[].input.concepts[].concept.id        The concept id (required)
+    *         @param {boolean}          inputs[].input.concepts[].concept.value     Whether or not the input is a positive (true) or negative (false) example of the concept (default: true)
+    * @return {Promise(inputs, error)} A Promise that is fulfilled with an instance of Inputs or rejected with an error
+    */
+
+  }, {
+    key: 'overwriteConcepts',
+    value: function overwriteConcepts(inputs) {
+      return this._update('overwrite', inputs);
     }
   }, {
     key: '_update',
@@ -1845,6 +1907,7 @@ var Inputs = function () {
     *       @param {string}                 queries[].image.type          Search over 'input' or 'output' (default: 'output')
     *       @param {string}                 queries[].image.(base64|url)  Can be a publicly accessibly url or base64 string representing image bytes (required)
     *       @param {number[]}               queries[].image.crop          An array containing the percent to be cropped from top, left, bottom and right (optional)
+    *       @param {object}                 queries[].image.metadata      An object with <key> and <value> specified by user to refine search with (optional)
     * @param {Object}                   options       Object with keys explained below: (optional)
     *    @param {Number}                  options.page          The page number (optional, default: 1)
     *    @param {Number}                  options.perPage       Number of images to return per page (optional, default: 20)
@@ -1859,6 +1922,7 @@ var Inputs = function () {
       var ands = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : [];
       var options = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : { page: 1, perPage: 20 };
 
+      var formattedAnds = [];
       var url = '' + this._config.apiEndpoint + SEARCH_PATH;
       var data = {
         'query': {
@@ -1874,9 +1938,11 @@ var Inputs = function () {
         ands = [ands];
       }
       if (ands.length > 0) {
-        data['query']['ands'] = ands.map(function (andQuery) {
-          return andQuery.name ? formatConceptsSearch(andQuery) : formatImagesSearch(andQuery);
+        ands.forEach(function (andQuery) {
+          var el = andQuery.name ? formatConceptsSearch(andQuery) : formatImagesSearch(andQuery);
+          formattedAnds = formattedAnds.concat(el);
         });
+        data['query']['ands'] = formattedAnds;
       }
       return wrapToken(this._config, function (headers) {
         return new Promise(function (resolve, reject) {
@@ -1927,7 +1993,6 @@ var _createClass = function () { function defineProperties(target, props) { for 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
 var axios = require('axios');
-var Concepts = require('./Concepts');
 
 var _require = require('./helpers');
 
@@ -1937,6 +2002,7 @@ var checkType = _require.checkType;
 var _require2 = require('./constants');
 
 var API = _require2.API;
+var SYNC_TIMEOUT = _require2.SYNC_TIMEOUT;
 var replaceVars = _require2.replaceVars;
 
 var _require3 = require('./utils');
@@ -1945,7 +2011,7 @@ var wrapToken = _require3.wrapToken;
 var formatImagePredict = _require3.formatImagePredict;
 var MODEL_VERSIONS_PATH = API.MODEL_VERSIONS_PATH;
 var MODEL_VERSION_PATH = API.MODEL_VERSION_PATH;
-var MODEL_PATCH_PATH = API.MODEL_PATCH_PATH;
+var MODELS_PATH = API.MODELS_PATH;
 var PREDICT_PATH = API.PREDICT_PATH;
 var VERSION_PREDICT_PATH = API.VERSION_PREDICT_PATH;
 var MODEL_INPUTS_PATH = API.MODEL_INPUTS_PATH;
@@ -1993,7 +2059,7 @@ var Model = function () {
       return this._rawData;
     }
     /**
-    * Merge concepts from a model
+    * Merge concepts to a model
     * @param {object[]}      concepts    List of concept objects with id
     * @return {Promise(response, error)} A Promise that is fulfilled with the API response or rejected with an error
     */
@@ -2003,7 +2069,7 @@ var Model = function () {
     value: function mergeConcepts() {
       var concepts = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : [];
 
-      return this._update('merge_concepts', concepts);
+      return this._update({ action: 'merge', concepts: concepts });
     }
     /**
     * Remove concepts from a model
@@ -2016,26 +2082,55 @@ var Model = function () {
     value: function deleteConcepts() {
       var concepts = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : [];
 
-      return this._update('delete_concepts', concepts);
+      return this._update({ action: 'remove', concepts: concepts });
     }
+    /**
+    * Overwrite concepts in a model
+    * @param {object[]}      concepts    List of concept objects with id
+    * @return {Promise(response, error)} A Promise that is fulfilled with the API response or rejected with an error
+    */
+
   }, {
-    key: '_update',
-    value: function _update(action, conceptsData) {
-      if (!Array.isArray(conceptsData)) {
-        conceptsData = [conceptsData];
+    key: 'overwriteConcepts',
+    value: function overwriteConcepts() {
+      var concepts = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : [];
+
+      return this._update({ action: 'overwrite', concepts: concepts });
+    }
+    /**
+    * Update a model's output config or concepts
+    * @param {object}               model                                 An object with any of the following attrs:
+    *   @param {string}               name                                  The new name of the model to update with
+    *   @param {boolean}              conceptsMutuallyExclusive             Do you expect to see more than one of the concepts in this model in the SAME image? Set to false (default) if so. Otherwise, set to true.
+    *   @param {boolean}              closedEnvironment                     Do you expect to run the trained model on images that do not contain ANY of the concepts in the model? Set to false (default) if so. Otherwise, set to true.
+    *   @param {object[]}             concepts                              An array of concept objects or string
+    *     @param {object|string}        concepts[].concept                    If string is given, this is interpreted as concept id. Otherwise, if object is given, client expects the following attributes
+    *       @param {string}             concepts[].concept.id                   The id of the concept to attach to the model
+    *   @param {object[]}             action                                The action to perform on the given concepts. Possible values are 'merge', 'remove', or 'overwrite'. Default: 'merge'
+    */
+
+  }, {
+    key: 'update',
+    value: function update(obj) {
+      var _this = this;
+
+      var url = '' + this._config.apiEndpoint + MODELS_PATH;
+      var modelData = [obj];
+      var data = { models: modelData.map(formatModel) };
+      if (data.concepts) {
+        data['action'] = obj.action || 'merge';
       }
-      var url = '' + this._config.apiEndpoint + replaceVars(MODEL_PATCH_PATH, [this.id]);
-      var concepts = conceptsData[0] instanceof Concepts ? conceptsData.toObject('id') : conceptsData;
-      var params = {
-        'concepts': concepts,
-        'action': action
-      };
+
       return wrapToken(this._config, function (headers) {
-        var data = {
-          headers: headers,
-          params: params
-        };
-        return axios.patch(url, data);
+        return new Promise(function (resolve, reject) {
+          axios.patch(url, data, { headers: headers }).then(function (response) {
+            if (isSuccess(response)) {
+              resolve(new Model(_this._config, response.data.models[0]));
+            } else {
+              reject(response);
+            }
+          }, reject);
+        });
       });
     }
     /**
@@ -2047,7 +2142,7 @@ var Model = function () {
   }, {
     key: 'train',
     value: function train(sync) {
-      var _this = this;
+      var _this2 = this;
 
       var url = '' + this._config.apiEndpoint + replaceVars(MODEL_VERSIONS_PATH, [this.id]);
       return wrapToken(this._config, function (headers) {
@@ -2055,9 +2150,10 @@ var Model = function () {
           axios.post(url, null, { headers: headers }).then(function (response) {
             if (isSuccess(response)) {
               if (sync) {
-                _this._pollTrain.bind(_this)(resolve, reject);
+                var timeStart = Date.now();
+                _this2._pollTrain.bind(_this2)(timeStart, resolve, reject);
               } else {
-                resolve(new Model(_this._config, response.data.model));
+                resolve(new Model(_this2._config, response.data.model));
               }
             } else {
               reject(response);
@@ -2068,15 +2164,21 @@ var Model = function () {
     }
   }, {
     key: '_pollTrain',
-    value: function _pollTrain(resolve, reject) {
-      var _this2 = this;
+    value: function _pollTrain(timeStart, resolve, reject) {
+      var _this3 = this;
 
       clearTimeout(this.pollTimeout);
+      if (Date.now() - timeStart >= SYNC_TIMEOUT) {
+        return reject({
+          status: 'Error',
+          message: 'Sync call timed out'
+        });
+      }
       this.getOutputInfo().then(function (model) {
         var modelStatusCode = model.modelVersion.status.code.toString();
         if (modelStatusCode === MODEL_QUEUED_FOR_TRAINING || modelStatusCode === MODEL_TRAINING) {
-          _this2.pollTimeout = setTimeout(function () {
-            return _this2._pollTrain(resolve, reject);
+          _this3.pollTimeout = setTimeout(function () {
+            return _this3._pollTrain(timeStart, resolve, reject);
           }, POLLTIME);
         } else {
           resolve(model);
@@ -2153,13 +2255,13 @@ var Model = function () {
   }, {
     key: 'getOutputInfo',
     value: function getOutputInfo() {
-      var _this3 = this;
+      var _this4 = this;
 
       var url = '' + this._config.apiEndpoint + replaceVars(MODEL_OUTPUT_PATH, [this.id]);
       return wrapToken(this._config, function (headers) {
         return new Promise(function (resolve, reject) {
           axios.get(url, { headers: headers }).then(function (response) {
-            resolve(new Model(_this3._config, response.data.model));
+            resolve(new Model(_this4._config, response.data.model));
           }, reject);
         });
       });
@@ -2193,7 +2295,7 @@ var Model = function () {
 ;
 
 module.exports = Model;
-},{"./Concepts":21,"./constants":26,"./helpers":27,"./utils":29,"axios":1}],25:[function(require,module,exports){
+},{"./constants":26,"./helpers":27,"./utils":29,"axios":1}],25:[function(require,module,exports){
 'use strict';
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
@@ -2222,6 +2324,7 @@ var checkType = _require3.checkType;
 var _require4 = require('./utils');
 
 var wrapToken = _require4.wrapToken;
+var formatModel = _require4.formatModel;
 var MODELS_PATH = API.MODELS_PATH;
 var MODEL_PATH = API.MODEL_PATH;
 var MODEL_SEARCH_PATH = API.MODEL_SEARCH_PATH;
@@ -2360,7 +2463,7 @@ var Models = function () {
             headers: headers
           }).then(function (response) {
             if (isSuccess(response)) {
-              resolve(new Models(_this5._config, response.models));
+              resolve(new Models(_this5._config, response.data.models));
             } else {
               reject(response);
             }
@@ -2370,19 +2473,19 @@ var Models = function () {
     }
     /**
      * Create a model
-     * @param {string|object}           model                                    If string, it is assumed to be the model name. Otherwise, if object is given, it can have any of the following keys:
-     *   @param {string}                  model.id                                 Model id
-     *   @param {string}                  model.name                               Model name
-     * @param {object[]|Concepts[]}     conceptsData                             List of objects with ids or an instance of Concepts object
-     * @param {Object}                  options                                  Object with keys explained below:
-     *   @param {Boolean}                 options.conceptsMutuallyExclusive        Optional
-     *   @param {Boolean}                 options.closedEnvironment                Optional
+     * @param {string|object}                  model                                  If string, it is assumed to be the model id. Otherwise, if object is given, it can have any of the following keys:
+     *   @param {string}                         model.id                               Model id
+     *   @param {string}                         model.name                             Model name
+     * @param {object[]|string[]|Concepts[]}   conceptsData                           List of objects with ids, concept id strings or an instance of Concepts object
+     * @param {Object}                         options                                Object with keys explained below:
+     *   @param {boolean}                        options.conceptsMutuallyExclusive      Do you expect to see more than one of the concepts in this model in the SAME image? Set to false (default) if so. Otherwise, set to true.
+     *   @param {boolean}                        options.closedEnvironment              Do you expect to run the trained model on images that do not contain ANY of the concepts in the model? Set to false (default) if so. Otherwise, set to true.
      * @return {Promise(model, error)} A Promise that is fulfilled with an instance of Model or rejected with an error
      */
 
   }, {
     key: 'create',
-    value: function create(name) {
+    value: function create(model) {
       var _this6 = this;
 
       var conceptsData = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : [];
@@ -2395,29 +2498,28 @@ var Models = function () {
         }
         return val;
       });
+      var modelObj = model;
+      if (checkType(/String/, model)) {
+        modelObj = { id: model, name: model };
+      }
+      if (modelObj.id === undefined) {
+        throw new Error('Model ID is required');
+      }
       var url = '' + this._config.apiEndpoint + MODELS_PATH;
-      var data = {
-        'model': {
-          'name': name,
-          'output_info': {
-            'data': {
-              concepts: concepts
-            },
-            'output_config': {
-              'concepts_mutually_exclusive': !!options.conceptsMutuallyExclusive,
-              'closed_environment': !!options.closedEnvironment
-            }
-          }
+      var data = { model: modelObj };
+      data['model']['output_info'] = {
+        'data': {
+          concepts: concepts
+        },
+        'output_config': {
+          'concepts_mutually_exclusive': !!options.conceptsMutuallyExclusive,
+          'closed_environment': !!options.closedEnvironment
         }
       };
+
       return wrapToken(this._config, function (headers) {
         return new Promise(function (resolve, reject) {
-          axios({
-            'method': 'post',
-            'url': url,
-            'data': data,
-            'headers': headers
-          }).then(function (response) {
+          axios.post(url, data, { headers: headers }).then(function (response) {
             if (isSuccess(response)) {
               resolve(new Model(_this6._config, response.data.model));
             } else {
@@ -2452,26 +2554,150 @@ var Models = function () {
       });
     }
     /**
-     * Deletes all models or a model (if given id) or a model version (if given id and verion id)
-     * @param {String}     id          The model's id
-     * @param {String}     versionId   The model's version id
+    * Update a model's or a list of models' output config or concepts
+    * @param {object|object[]}      model                                 Can be a single model object or list of model objects with the following attrs:
+    *   @param {string}               id                                    The id of the model to apply changes to (Required)
+    *   @param {string}               name                                  The new name of the model to update with
+    *   @param {boolean}              conceptsMutuallyExclusive             Do you expect to see more than one of the concepts in this model in the SAME image? Set to false (default) if so. Otherwise, set to true.
+    *   @param {boolean}              closedEnvironment                     Do you expect to run the trained model on images that do not contain ANY of the concepts in the model? Set to false (default) if so. Otherwise, set to true.
+    *   @param {object[]}             concepts                              An array of concept objects or string
+    *     @param {object|string}        concepts[].concept                    If string is given, this is interpreted as concept id. Otherwise, if object is given, client expects the following attributes
+    *       @param {string}             concepts[].concept.id                   The id of the concept to attach to the model
+    *   @param {object[]}             action                                The action to perform on the given concepts. Possible values are 'merge', 'remove', or 'overwrite'. Default: 'merge'
+    */
+
+  }, {
+    key: 'update',
+    value: function update(obj) {
+      var _this8 = this;
+
+      var url = '' + this._config.apiEndpoint + MODELS_PATH;
+      var models = obj;
+      if (checkType(/Object/, obj)) {
+        models = [obj];
+      }
+      var data = { models: models.map(formatModel) };
+      data['action'] = obj.action || 'merge';
+
+      return wrapToken(this._config, function (headers) {
+        return new Promise(function (resolve, reject) {
+          axios.patch(url, data, { headers: headers }).then(function (response) {
+            if (isSuccess(response)) {
+              resolve(new Models(_this8._config, response.data.models));
+            } else {
+              reject(response);
+            }
+          }, reject);
+        });
+      });
+    }
+    /**
+    * Update model by merging concepts
+    * @param {object|object[]}      model                                 Can be a single model object or list of model objects with the following attrs:
+    *   @param {string}               id                                    The id of the model to apply changes to (Required)
+    *   @param {string}               name                                  The new name of the model to update with
+    *   @param {boolean}              conceptsMutuallyExclusive             Do you expect to see more than one of the concepts in this model in the SAME image? Set to false (default) if so. Otherwise, set to true.
+    *   @param {boolean}              closedEnvironment                     Do you expect to run the trained model on images that do not contain ANY of the concepts in the model? Set to false (default) if so. Otherwise, set to true.
+    *   @param {object[]}             concepts                              An array of concept objects or string
+    *     @param {object|string}        concepts[].concept                    If string is given, this is interpreted as concept id. Otherwise, if object is given, client expects the following attributes
+    *       @param {string}             concepts[].concept.id                   The id of the concept to attach to the model
+    */
+
+  }, {
+    key: 'mergeConcepts',
+    value: function mergeConcepts() {
+      var data = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+
+      data.action = 'merge';
+      return this.update(data);
+    }
+    /**
+    * Update model by removing concepts
+    * @param {object|object[]}      model                                 Can be a single model object or list of model objects with the following attrs:
+    *   @param {string}               id                                    The id of the model to apply changes to (Required)
+    *   @param {string}               name                                  The new name of the model to update with
+    *   @param {boolean}              conceptsMutuallyExclusive             Do you expect to see more than one of the concepts in this model in the SAME image? Set to false (default) if so. Otherwise, set to true.
+    *   @param {boolean}              closedEnvironment                     Do you expect to run the trained model on images that do not contain ANY of the concepts in the model? Set to false (default) if so. Otherwise, set to true.
+    *   @param {object[]}             concepts                              An array of concept objects or string
+    *     @param {object|string}        concepts[].concept                    If string is given, this is interpreted as concept id. Otherwise, if object is given, client expects the following attributes
+    *       @param {string}             concepts[].concept.id                   The id of the concept to attach to the model
+    */
+
+  }, {
+    key: 'deleteConcepts',
+    value: function deleteConcepts() {
+      var data = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+
+      data.action = 'remove';
+      return this.update(data);
+    }
+    /**
+    * Update model by overwriting concepts
+    * @param {object|object[]}      model                                 Can be a single model object or list of model objects with the following attrs:
+    *   @param {string}               id                                    The id of the model to apply changes to (Required)
+    *   @param {string}               name                                  The new name of the model to update with
+    *   @param {boolean}              conceptsMutuallyExclusive             Do you expect to see more than one of the concepts in this model in the SAME image? Set to false (default) if so. Otherwise, set to true.
+    *   @param {boolean}              closedEnvironment                     Do you expect to run the trained model on images that do not contain ANY of the concepts in the model? Set to false (default) if so. Otherwise, set to true.
+    *   @param {object[]}             concepts                              An array of concept objects or string
+    *     @param {object|string}        concepts[].concept                    If string is given, this is interpreted as concept id. Otherwise, if object is given, client expects the following attributes
+    *       @param {string}             concepts[].concept.id                   The id of the concept to attach to the model
+    */
+
+  }, {
+    key: 'overwriteConcepts',
+    value: function overwriteConcepts() {
+      var data = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+
+      data.action = 'overwrite';
+      return this.update(data);
+    }
+    /**
+     * Deletes all models (if no ids and versionId given) or a model (if given id) or a model version (if given id and verion id)
+     * @param {String|String[]}      ids         Can be a single string or an array of strings representing the model ids
+     * @param {String}                versionId   The model's version id
      * @return {Promise(response, error)} A Promise that is fulfilled with the API response or rejected with an error
      */
 
   }, {
     key: 'delete',
-    value: function _delete(id, versionId) {
-      var url = void 0;
-      if (id) {
-        url = '' + this._config.apiEndpoint + replaceVars(MODEL_PATH, [id]);
-      } else if (versionId) {
-        url = '' + this._config.apiEndpoint + replaceVars(MODEL_VERSION_PATH, [id, versionId]);
+    value: function _delete(ids) {
+      var versionId = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : null;
+
+      var request = void 0,
+          url = void 0,
+          data = void 0;
+      var id = ids;
+
+      if (checkType(/String/, ids) || checkType(/Array/, ids) && ids.length === 1) {
+        if (versionId) {
+          url = '' + this._config.apiEndpoint + replaceVars(MODEL_VERSION_PATH, [id, versionId]);
+        } else {
+          url = '' + this._config.apiEndpoint + replaceVars(MODEL_PATH, [id]);
+        }
+        request = wrapToken(this._config, function (headers) {
+          return axios.delete(url, { headers: headers });
+        });
       } else {
-        url = '' + this._config.apiEndpoint + MODELS_PATH;
+        if (!ids && !versionId) {
+          url = '' + this._config.apiEndpoint + MODELS_PATH;
+          data = { 'delete_all': true };
+        } else if (!versionId && ids.length > 1) {
+          url = '' + this._config.apiEndpoint + MODELS_PATH;
+          data = { ids: ids };
+        } else {
+          throw new Error('Wrong arguments passed. You can only delete all\nmodels (provide no arguments), delete select\nmodels (provide list of ids), delete a single\nmodel (providing a single id) or delete a model\nversion (provide a single id and version id)');
+        }
+        request = wrapToken(this._config, function (headers) {
+          return axios({
+            method: 'delete',
+            url: url,
+            data: data,
+            headers: headers
+          });
+        });
       }
-      return wrapToken(this._config, function (headers) {
-        return axios.delete(url, { headers: headers });
-      });
+
+      return request;
     }
     /**
      * Search for models by name or type
@@ -2483,7 +2709,7 @@ var Models = function () {
   }, {
     key: 'search',
     value: function search(name) {
-      var _this8 = this;
+      var _this9 = this;
 
       var type = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : null;
 
@@ -2498,7 +2724,7 @@ var Models = function () {
         return new Promise(function (resolve, reject) {
           axios.post(url, params, { headers: headers }).then(function (response) {
             if (isSuccess(response)) {
-              resolve(new Models(_this8._config, response.data.models));
+              resolve(new Models(_this9._config, response.data.models));
             } else {
               reject(response);
             }
@@ -2514,7 +2740,7 @@ var Models = function () {
 ;
 
 module.exports = Models;
-},{"./Concepts":21,"./Model":24,"./constants":26,"./helpers":27,"./utils":29,"axios":1,"es6-promise":30}],26:[function(require,module,exports){
+},{"./Concepts":21,"./Model":24,"./constants":26,"./helpers":27,"./utils":29,"axios":1,"es6-promise":31}],26:[function(require,module,exports){
 'use strict';
 
 module.exports = {
@@ -2537,7 +2763,6 @@ module.exports = {
     INPUTS_PATH: '/v2/inputs',
     INPUT_PATH: '/v2/inputs/$0',
     INPUTS_STATUS_PATH: '/v2/inputs/status',
-    INPUT_PATCH_PATH: '/v2/inputs/$0/data/concepts',
     SEARCH_PATH: '/v2/searches'
   },
   // var replacement must be given in order
@@ -2550,7 +2775,8 @@ module.exports = {
     });
     return newPath;
   },
-  URL_REGEX: /^(https?:\/\/)?((([a-z\d]([a-z\d-]*[a-z\d])*)\.)+[a-z]{2,}|((\d{1,3}\.){3}\d{1,3}))(\:\d+)?(\/[-a-z\d%_.~+]*)*(\?[;&a-z\d%_.~+=-]*)?(\#[-a-z\d_]*)?$/i
+  URL_REGEX: /^(https?:\/\/)?((([a-z\d]([a-z\d-]*[a-z\d])*)\.)+[a-z]{2,}|((\d{1,3}\.){3}\d{1,3}))(\:\d+)?(\/[-a-z\d%_.~+]*)*(\?[;&a-z\d%_.~+=-]*)?(\#[-a-z\d_]*)?$/i,
+  SYNC_TIMEOUT: 60000
 };
 },{}],27:[function(require,module,exports){
 'use strict';
@@ -2592,6 +2818,7 @@ module.exports = global.Clarifai = {
   WEDDINGS_MODEL: 'c386b7a870114f4a87477c0824499348',
   COLOR_MODEL: 'eeed0b6733a644cea07cf4c60f87ebb7',
   CLUSTER_MODEL: 'cccbe437d6e54e2bb911c6aa292fb072',
+  FACE_DETECT_MODEL: 'a403429f2ddf4b49b307e318f00e528b',
   BLUR: 'ddd9d34872ab32be9f0e3b2b98a87be2'
 };
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
@@ -2610,17 +2837,49 @@ var _require3 = require('./helpers');
 
 var checkType = _require3.checkType;
 
+var _require4 = require('./../package.json');
+
+var VERSION = _require4.version;
+
 
 module.exports = {
   wrapToken: function wrapToken(_config, requestFn) {
     return new Promise(function (resolve, reject) {
       _config.token().then(function (token) {
         var headers = {
-          'Authorization': 'Bearer ' + token['access_token']
+          'Authorization': 'Bearer ' + token['access_token'],
+          'X-Clarifai-Client': 'js:' + VERSION
         };
         requestFn(headers).then(resolve, reject);
       }, reject);
     });
+  },
+  formatModel: function formatModel() {
+    var data = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+
+    var formatted = {};
+    if (data.id === null || data.id === undefined) {
+      throw new Error('Model id is required');
+    }
+    formatted.id = data.id;
+    if (data.name) {
+      formatted.name = data.name;
+    }
+    formatted['output_info'] = {};
+    if (data.conceptsMutuallyExclusive !== undefined) {
+      formatted['output_info']['output_config'] = formatted['output_info']['output_config'] || {};
+      formatted['output_info']['output_config']['concepts_mutually_exclusive'] = !!data.conceptsMutuallyExclusive;
+    }
+    if (data.closedEnvironment !== undefined) {
+      formatted['output_info']['output_config'] = formatted['output_info']['output_config'] || {};
+      formatted['output_info']['output_config']['closed_environment'] = !!data.closedEnvironment;
+    }
+    if (data.concepts) {
+      formatted['output_info']['data'] = {
+        'concepts': data.concepts.map(module.exports.formatConcept)
+      };
+    }
+    return formatted;
   },
   formatInput: function formatInput(data, includeImage) {
     var input = checkType(/String/, data) ? { 'url': data } : data;
@@ -2630,6 +2889,9 @@ module.exports = {
     };
     if (input['concepts']) {
       formatted['data']['concepts'] = input['concepts'];
+    }
+    if (input['metadata']) {
+      formatted['data']['metadata'] = input['metadata'];
     }
     if (includeImage !== false) {
       formatted.data['image'] = {
@@ -2664,6 +2926,7 @@ module.exports = {
   },
   formatImagesSearch: function formatImagesSearch(image) {
     var imageQuery = void 0;
+    var formatted = [];
     if (typeof image === 'string') {
       imageQuery = {
         'url': image
@@ -2676,23 +2939,37 @@ module.exports = {
       };
     }
 
-    var input = {
-      'input': {
-        'data': {
-          'image': imageQuery
+    if (imageQuery.url || imageQuery.baseQuery) {
+      var input = {
+        'input': {
+          'data': {
+            'image': imageQuery
+          }
         }
+      };
+      if (image.type !== 'input') {
+        input = { 'output': input };
       }
-    };
-    return image.type === 'input' ? input : {
-      'output': input
-    };
+      formatted.push(input);
+    }
+
+    if (image.metadata !== undefined) {
+      formatted.push({
+        'input': {
+          'data': {
+            'metadata': image.metadata
+          }
+        }
+      });
+    }
+
+    return formatted;
   },
   formatConcept: function formatConcept(concept) {
     var formatted = concept;
     if (checkType(/String/, concept)) {
       formatted = {
-        id: concept,
-        name: concept
+        id: concept
       };
     }
     return formatted;
@@ -2714,7 +2991,129 @@ module.exports = {
     return v;
   }
 };
-},{"./constants":26,"./helpers":27,"es6-promise":30}],30:[function(require,module,exports){
+},{"./../package.json":30,"./constants":26,"./helpers":27,"es6-promise":31}],30:[function(require,module,exports){
+module.exports={
+  "_args": [
+    [
+      {
+        "raw": "clarifai@^2.0.9",
+        "scope": null,
+        "escapedName": "clarifai",
+        "name": "clarifai",
+        "rawSpec": "^2.0.9",
+        "spec": ">=2.0.9 <3.0.0",
+        "type": "range"
+      },
+      "/Users/BOGA/Desktop/pixelmesofty"
+    ]
+  ],
+  "_from": "clarifai@>=2.0.9 <3.0.0",
+  "_id": "clarifai@2.0.18",
+  "_inCache": true,
+  "_location": "/clarifai",
+  "_nodeVersion": "4.2.1",
+  "_npmOperationalInternal": {
+    "host": "packages-12-west.internal.npmjs.com",
+    "tmp": "tmp/clarifai-2.0.18.tgz_1481659001228_0.8034207525197417"
+  },
+  "_npmUser": {
+    "name": "clarifai-jade",
+    "email": "jade@clarifai.com"
+  },
+  "_npmVersion": "2.14.7",
+  "_phantomChildren": {},
+  "_requested": {
+    "raw": "clarifai@^2.0.9",
+    "scope": null,
+    "escapedName": "clarifai",
+    "name": "clarifai",
+    "rawSpec": "^2.0.9",
+    "spec": ">=2.0.9 <3.0.0",
+    "type": "range"
+  },
+  "_requiredBy": [
+    "#DEV:/"
+  ],
+  "_resolved": "https://registry.npmjs.org/clarifai/-/clarifai-2.0.18.tgz",
+  "_shasum": "b26e43131430da1d90625e74b635fd193d6f6978",
+  "_shrinkwrap": null,
+  "_spec": "clarifai@^2.0.9",
+  "_where": "/Users/BOGA/Desktop/pixelmesofty",
+  "author": {
+    "name": "Clarifai Inc."
+  },
+  "bugs": {
+    "url": "https://github.com/Clarifai/clarifai-javascript/issues"
+  },
+  "dependencies": {
+    "axios": "0.11.1",
+    "es6-promise": "3.1.2",
+    "form-data": "0.2.0"
+  },
+  "description": "Official Clarifai Javascript SDK",
+  "devDependencies": {
+    "babel-eslint": "^6.1.2",
+    "babel-preset-es2015": "^6.14.0",
+    "babel-register": "^6.14.0",
+    "babelify": "^7.3.0",
+    "del": "2.0.2",
+    "envify": "3.4.0",
+    "git-branch": "0.3.0",
+    "gulp": "3.9.0",
+    "gulp-awspublish": "3.0.1",
+    "gulp-babel": "^6.1.2",
+    "gulp-browserify": "0.5.1",
+    "gulp-concat": "2.6.0",
+    "gulp-data": "1.2.1",
+    "gulp-eslint": "2.0.0",
+    "gulp-if": "2.0.0",
+    "gulp-imagemin": "2.3.0",
+    "gulp-insert": "0.5.0",
+    "gulp-jasmine": "^2.2.1",
+    "gulp-newer": "0.5.1",
+    "gulp-notify": "2.2.0",
+    "gulp-rename": "1.2.2",
+    "gulp-replace-task": "0.11.0",
+    "gulp-uglify": "1.4.1",
+    "gulp-util": "3.0.6",
+    "jsdoc": "^3.4.1",
+    "minami": "^1.1.1",
+    "require-dir": "0.3.0",
+    "serve-static": "1.10.0"
+  },
+  "directories": {},
+  "dist": {
+    "shasum": "b26e43131430da1d90625e74b635fd193d6f6978",
+    "tarball": "https://registry.npmjs.org/clarifai/-/clarifai-2.0.18.tgz"
+  },
+  "gitHead": "d55ff1cf091c1126c11b3c017462e7343660b0ab",
+  "homepage": "https://github.com/Clarifai/clarifai-javascript#readme",
+  "license": "Apache-2.0",
+  "main": "dist/index.js",
+  "maintainers": [
+    {
+      "name": "clarifai-jade",
+      "email": "jade@clarifai.com"
+    },
+    {
+      "name": "dankantor-clarifai",
+      "email": "dankantor@clarifai.com"
+    }
+  ],
+  "name": "clarifai",
+  "optionalDependencies": {},
+  "readme": "ERROR: No README data found!",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Clarifai/clarifai-javascript.git"
+  },
+  "scripts": {
+    "jsdoc": "jsdoc src/* -t node_modules/minami -d docs/$npm_package_version && jsdoc src/* -t node_modules/minami -d docs/latest"
+  },
+  "version": "2.0.18"
+}
+
+},{}],31:[function(require,module,exports){
 (function (process,global){
 /*!
  * @overview es6-promise - a tiny implementation of Promises/A+.
@@ -3672,7 +4071,7 @@ module.exports = {
 
 
 }).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"_process":31}],31:[function(require,module,exports){
+},{"_process":32}],32:[function(require,module,exports){
 // shim for using process in browser
 var process = module.exports = {};
 
@@ -3854,13 +4253,22 @@ process.chdir = function (dir) {
 };
 process.umask = function() { return 0; };
 
-},{}],32:[function(require,module,exports){
+},{}],33:[function(require,module,exports){
 var Clarifai = require('clarifai');
+
 var app = new Clarifai.App(
-  'LzXEFU2gsfodIIjTO5YqNVqUvFRmJUkFYrep89bb',
-  'VgVrrKfTFrFFVDTFVqD0EwDdHnqtku-q6IAcb1KD'
+  'SqjHbF4Eox6ieZzP7I28M9pzrjZo8_inW29b_BWi',
+  'LHLPEPwRiER59cAp7fWQQ8ghLVuAxwCjd0e09b0f'
 );
-  var API_KEY = '3508192-a3f9ba87aae26460abf2d2130';
+
+var API_KEY = '3508192-a3f9ba87aae26460abf2d2130';
+
+
+
+
+
+
+
 
 function updateModel(model) {
   model.deleteConcepts({"id": "no person"}).then(
@@ -3879,8 +4287,30 @@ var winners = [];
 //     // there was an error
 //   }
 // });
-var stuff = "stuff";
 $(function(){
+
+  var canvas = document.getElementById("canvas");
+  var ctx = canvas.getContext('2d');
+  $("#user_pic").change(function(){
+    var file = this.files[0];
+    var name = file.name;
+    var img = file;
+    var reader = new FileReader();
+
+    reader.onload = function(e){
+      console.log(e);
+      $("#blah").attr('src', e.target.result);
+    };
+    reader.readAsDataURL(file);
+
+
+    // ctx.drawImage(img, 0,0);
+  });
+
+
+
+
+
 
   var destination = "";
   var score = 0;
@@ -4044,4 +4474,4 @@ var startingWords = ["rodent", "rain", "nature", "bird", "beach", "pizza", "boat
   };
 });
 
-},{"clarifai":28}]},{},[32]);
+},{"clarifai":28}]},{},[33]);

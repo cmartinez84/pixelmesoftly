@@ -1,9 +1,18 @@
 var Clarifai = require('clarifai');
+
 var app = new Clarifai.App(
-  'LzXEFU2gsfodIIjTO5YqNVqUvFRmJUkFYrep89bb',
-  'VgVrrKfTFrFFVDTFVqD0EwDdHnqtku-q6IAcb1KD'
+  'SqjHbF4Eox6ieZzP7I28M9pzrjZo8_inW29b_BWi',
+  'LHLPEPwRiER59cAp7fWQQ8ghLVuAxwCjd0e09b0f'
 );
-  var API_KEY = '3508192-a3f9ba87aae26460abf2d2130';
+
+var API_KEY = '3508192-a3f9ba87aae26460abf2d2130';
+
+
+
+
+
+
+
 
 function updateModel(model) {
   model.deleteConcepts({"id": "no person"}).then(
@@ -22,8 +31,30 @@ var winners = [];
 //     // there was an error
 //   }
 // });
-var stuff = "stuff";
 $(function(){
+
+  var canvas = document.getElementById("canvas");
+  var ctx = canvas.getContext('2d');
+  $("#user_pic").change(function(){
+    var file = this.files[0];
+    var name = file.name;
+    var img = file;
+    var reader = new FileReader();
+
+    reader.onload = function(e){
+      console.log(e);
+      $("#blah").attr('src', e.target.result);
+    };
+    reader.readAsDataURL(file);
+
+
+    // ctx.drawImage(img, 0,0);
+  });
+
+
+
+
+
 
   var destination = "";
   var score = 0;
