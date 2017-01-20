@@ -4294,20 +4294,15 @@ $(function(){
   $("#user_pic").change(function(){
     var file = this.files[0];
     var name = file.name;
-    var img = file;
     var reader = new FileReader();
-
     reader.onload = function(e){
-      console.log(e);
-      $("#blah").attr('src', e.target.result);
       var img = new Image();
       img.src = e.target.result;
+      canvas.height = img.height;
+      canvas.width = img.width;
       ctx.drawImage(img, 0, 0);
     };
     reader.readAsDataURL(file);
-
-
-    // ctx.drawImage(img, 0,0);
   });
 
 
